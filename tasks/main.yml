@@ -1,0 +1,111 @@
+---
+##############################
+# Configure APT repositories #
+##############################
+- name: configure /etc/apt/sources.list
+  template:
+    src: sources.list.j2
+    dest: /etc/apt/sources.list
+
+- name: comment out pve-enterprise repositories
+  replace:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    regexp: '^{{ pve_ent_source }}'
+    replace: '# {{ pve_ent_source }}'
+
+#########################
+# Install base packages #
+#########################
+- name: perform an apt update
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: install base packages
+  apt:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - '{{ proxmox_packages | default([]) }}'
+
+#########################
+# Nested Virtualization #
+#########################
+- name: enable nested virtualization
+  block:
+    - name: set flag for nested virt for Intel
+      copy:
+        content: 'options kvm-intel nested=Y'
+        dest: /etc/modprobe.d/kvm-intel.conf
+      when: ansible_machine == 'x86_64'
+    
+    - name: enable Intel kernel module
+      modprobe:
+        name: kvm_intel
+        state: present
+      when: ansible_machine == 'x86_64'
+
+    #  cat /sys/module/kvm_intel/parameters/nested
+    
+    - name: set flag for nested virt for AMD
+      copy:
+        content: 'options kvm-amd nested=1'
+        dest: /etc/modprobe.d/kvm-amd.conf
+      when: ansible_machine != 'x86_64'
+    
+    - name: enable AMD kernel module
+      modprobe:
+        name: kvm_amd
+        state: present
+      when: ansible_machine != 'x86_64'
+  when: config_nested_virtualization | bool
+
+##############
+# Cloud-init #
+##############
+- name: configure cloud-init
+  block:
+    - name: install cloud-init packages
+      apt:
+        name: '{{ item }}'
+        state: present
+      with_items:
+        - '{{ cloud_init_packages | default([]) }}'
+  when: configure_cloud_init | bool
+
+##############
+# Dark Theme #
+##############
+# bash <(curl -s https://raw.githubusercontent.com/Weilbyte/PVEDiscordDark/master/PVEDiscordDark.sh ) install
+- name: install Dark Theme
+  block:
+    - name: get Dark Theme installer
+      get_url:
+        url: '{{ dark_theme_installer_url }}'
+        dest: '{{ dark_theme_installer_path }}'
+        mode: '0755'
+    - name: check if installed
+      stat:
+        path: '{{ dark_theme_install_check }}'
+      register: dark_theme_installed
+
+    - name: run installer scripts
+      command: '{{ dark_theme_installer_path }} install'
+      when: not dark_theme_installed.stat.exists | bool
+      
+  when: install_dark_theme | bool
+
+######################
+# Upgrade Proxmox OS #
+######################
+- name: update all OS packages
+  block:
+    - name: update all packages to their latest version
+      apt:
+        name: "*"
+        state: latest
+    
+    - name: upgrade the OS
+      apt:
+        upgrade: dist
+  when: upgrade_proxmox_os_packages | bool

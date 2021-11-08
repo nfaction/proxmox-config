@@ -1,4 +1,6 @@
 galaxy_info:
+  role_name: config
+  namespace: proxmox
   author: Matthew DePorter
   description: Configure Proxmox VE Hypervisors
   company: Mobile-Tech LLC

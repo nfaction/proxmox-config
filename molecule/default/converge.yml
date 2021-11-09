@@ -15,6 +15,11 @@
 
     install_dark_theme: false
   tasks:
+    - name: remove apt repo in docker
+      file:
+        path: /etc/apt/sources.list.d/pve-install-repo.list
+        state: absent
+
     - name: "Include proxmox-config"
       include_role:
         name: "proxmox-config"

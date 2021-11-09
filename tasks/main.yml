@@ -12,6 +12,7 @@
     path: /etc/apt/sources.list.d/pve-enterprise.list
     regexp: '^{{ pve_ent_source }}'
     replace: '# {{ pve_ent_source }}'
+  when: disable_pve_ent_source | bool
 
 #########################
 # Install base packages #

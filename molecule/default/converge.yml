@@ -4,6 +4,16 @@
   vars:
     config_nested_virtualization: false
     upgrade_proxmox_os_packages: false
+    disable_pve_ent_source: false
+
+    proxmox_packages:
+      - vim
+      - tmux
+      - parted
+      - curl
+      - tcpdump
+
+    install_dark_theme: false
   tasks:
     - name: "Include proxmox-config"
       include_role:

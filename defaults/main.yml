@@ -1,5 +1,6 @@
 ---
 
+disable_pve_ent_source: true
 pve_ent_source: 'deb https://enterprise.proxmox.com/debian/pve {{ ansible_distribution_release }} pve-enterprise'
 
 proxmox_packages:

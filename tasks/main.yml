@@ -81,15 +81,16 @@
 # bash <(curl -s https://raw.githubusercontent.com/Weilbyte/PVEDiscordDark/master/PVEDiscordDark.sh ) install
 - name: install Dark Theme
   block:
+    - name: check if installed
+      stat:
+        path: '{{ dark_theme_install_check }}'
+      register: dark_theme_installed
+
     - name: get Dark Theme installer
       get_url:
         url: '{{ dark_theme_installer_url }}'
         dest: '{{ dark_theme_installer_path }}'
         mode: '0755'
-    - name: check if installed
-      stat:
-        path: '{{ dark_theme_install_check }}'
-      register: dark_theme_installed
 
     - name: run installer scripts
       command: '{{ dark_theme_installer_path }} install'

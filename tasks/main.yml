@@ -75,6 +75,21 @@
         - '{{ cloud_init_packages | default([]) }}'
   when: configure_cloud_init | bool
 
+######################
+# Upgrade Proxmox OS #
+######################
+- name: update all OS packages
+  block:
+    - name: update all packages to their latest version
+      apt:
+        name: "*"
+        state: latest
+
+    - name: upgrade the OS
+      apt:
+        upgrade: dist
+  when: upgrade_proxmox_os_packages | bool
+
 ##############
 # Dark Theme #
 ##############
@@ -97,18 +112,3 @@
       when: not dark_theme_installed.stat.exists | bool
       
   when: install_dark_theme | bool
-
-######################
-# Upgrade Proxmox OS #
-######################
-- name: update all OS packages
-  block:
-    - name: update all packages to their latest version
-      apt:
-        name: "*"
-        state: latest
-    
-    - name: upgrade the OS
-      apt:
-        upgrade: dist
-  when: upgrade_proxmox_os_packages | bool

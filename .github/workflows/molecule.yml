@@ -6,6 +6,8 @@ on:
     branches:
       - master
   pull_request:
+    branches:
+      - master
 
   workflow_dispatch:
 
@@ -44,10 +46,19 @@ jobs:
       - name: Set up Python 3.
         uses: actions/setup-python@v2
         with:
-          python-version: '3.x'
+          python-version: '3.8'
 
       - name: Install test dependencies.
-        run: pip3 install ansible molecule[docker] docker
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+          pip install molecule[docker]
+
+      - name: Install Ansible requirements
+        run: |
+          if [ -f requirements.yml ]; then
+            ansible-galaxy install -r requirements.yml
+          fi
 
       - name: Run Molecule tests.
         run: molecule test

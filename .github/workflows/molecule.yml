@@ -38,6 +38,7 @@ jobs:
       matrix:
         distro:
           - proxmox7
+          - proxmox8
 
     steps:
       - name: Check out the codebase.

@@ -130,7 +130,7 @@
         line: '\1 intel_iommu=on iommu=pt\3'
         backrefs: yes
       when: ansible_machine == 'x86_64'
-      notify: refresh EFI boot tool
+      notify: 'refresh and update EFI and initramfs'
     
     - name: enable IOMMU for AMD in /etc/kernel/cmdline
       lineinfile:
@@ -139,7 +139,7 @@
         line: '\1 iommu=pt\2'
         backrefs: yes
       when: ansible_machine != 'x86_64'
-      notify: refresh EFI boot tool
+      notify: 'refresh and update EFI and initramfs'
 
     #############################
     # Enable PCI kernel modules #
@@ -150,11 +150,6 @@
         state: touch
         modification_time: preserve
         access_time: preserve
-
-      # copy:
-      #   dest: /etc/modules
-      #   content: ''
-      #   force: no
 
     - name: remove vfio_virqfd if kernel version is newer than 6.2
       set_fact:
@@ -167,7 +162,7 @@
         line: '{{ item }}'
         state: present
       with_items: '{{ pci_passthrough_modules }}'
-      notify: update initramfs
+      notify: 'refresh and update EFI and initramfs'
   when: pci_passthrough_config | bool
   tags:
     - pci-pass

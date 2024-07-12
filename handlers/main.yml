@@ -3,7 +3,14 @@
 - name: refresh EFI boot tool
   command: pve-efiboot-tool refresh
   when: pci_trigger_update_refresh | bool
+  listen: 'refresh and update EFI and initramfs'
 
 - name: update initramfs
   command: update-initramfs -u -k all
   when: pci_trigger_update_refresh | bool
+  listen: 'refresh and update EFI and initramfs'
+
+- name: Nofify of reboot
+  debug:
+    msg: "Please reboot your PVE host now"
+  listen: 'refresh and update EFI and initramfs'

@@ -1,0 +1,9 @@
+---
+- name: Prepare
+  hosts: all
+  vars: []
+  tasks:
+    - name: create dummy file for pci passthrough testing
+      copy:
+        dest: /etc/kernel/cmdline
+        content: 'root=ZFS=rpool/ROOT/pve-1 boot=zfs'

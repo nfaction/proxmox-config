@@ -1,0 +1,9 @@
+---
+
+- name: refresh EFI boot tool
+  command: pve-efiboot-tool refresh
+  when: pci_trigger_update_refresh | bool
+
+- name: update initramfs
+  command: update-initramfs -u -k all
+  when: pci_trigger_update_refresh | bool

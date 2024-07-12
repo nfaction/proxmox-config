@@ -111,4 +111,61 @@
       command: '{{ dark_theme_installer_path }} install'
       when: not dark_theme_installed.stat.exists | bool
       
-  when: install_dark_theme | bool
+  when: ansible_distribution_release in dark_theme_oses
+
+###################
+# PCI Passthrough #
+###################
+- name: configre PCI Passthrough
+  block:
+    ################
+    # Enable IOMMU #
+    ################
+    - name: enable IOMMU for Intel in /etc/kernel/cmdline
+      lineinfile:
+        path: /etc/kernel/cmdline
+        regexp: '^(root=ZFS=rpool/ROOT/pve-1 boot=zfs)(?!.*\b(intel_iommu=on|iommu=pt)\b)(.*)$'
+        line: '\1 intel_iommu=on iommu=pt\3'
+        backrefs: yes
+      when: ansible_machine == 'x86_64'
+      notify: refresh EFI boot tool
+    
+    - name: enable IOMMU for AMD in /etc/kernel/cmdline
+      lineinfile:
+        path: /etc/kernel/cmdline
+        regexp: '^(root=ZFS=rpool/ROOT/pve-1 boot=zfs)(?!.*\biommu=pt\b)(.*)$'
+        line: '\1 iommu=pt\2'
+        backrefs: yes
+      when: ansible_machine != 'x86_64'
+      notify: refresh EFI boot tool
+
+    #############################
+    # Enable PCI kernel modules #
+    #############################
+    - name: ensure that /etc/modules exists
+      file:
+        path: /etc/modules
+        state: touch
+        modification_time: preserve
+        access_time: preserve
+
+      # copy:
+      #   dest: /etc/modules
+      #   content: ''
+      #   force: no
+
+    - name: remove vfio_virqfd if kernel version is newer than 6.2
+      set_fact:
+        pci_passthrough_modules: "{{ pci_passthrough_modules | difference(['vfio_virqfd']) }}"
+      when: ansible_kernel is version('6.2', '>')
+
+    - name: ensure all modules have been enabled in /etc/modules
+      lineinfile:
+        path: /etc/modules
+        line: '{{ item }}'
+        state: present
+      with_items: '{{ pci_passthrough_modules }}'
+      notify: update initramfs
+  when: pci_passthrough_config | bool
+  tags:
+    - pci-pass

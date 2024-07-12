@@ -17,10 +17,19 @@ configure_cloud_init: true
 cloud_init_packages:
   - cloud-init
 
-install_dark_theme: true
+dark_theme_oses:
+  - bullseye
 dark_theme_installer: 'PVEDiscordDark.sh'
 dark_theme_installer_url: 'https://raw.githubusercontent.com/Weilbyte/PVEDiscordDark/master/{{ dark_theme_installer }}'
 dark_theme_installer_path: '/root/{{ dark_theme_installer }}'
 dark_theme_install_check: '{{ dark_theme_installer_path }}'
 
 upgrade_proxmox_os_packages: true
+
+pci_passthrough_config: true
+pci_trigger_update_refresh: true
+pci_passthrough_modules:
+  - vfio
+  - vfio_iommu_type1
+  - vfio_pci
+  - vfio_virqfd

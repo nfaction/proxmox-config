@@ -4,7 +4,7 @@
   vars:
     config_nested_virtualization: false
     upgrade_proxmox_os_packages: false
-    disable_pve_ent_source: false
+    disable_pve_ent_source: true
 
     proxmox_packages:
       - vim

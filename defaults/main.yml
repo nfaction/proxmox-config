@@ -17,6 +17,7 @@ configure_cloud_init: true
 cloud_init_packages:
   - cloud-init
 
+dark_theme_install: true
 dark_theme_oses:
   - bullseye
 dark_theme_installer: 'PVEDiscordDark.sh'

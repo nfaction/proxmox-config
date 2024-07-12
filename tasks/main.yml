@@ -111,7 +111,9 @@
       command: '{{ dark_theme_installer_path }} install'
       when: not dark_theme_installed.stat.exists | bool
       
-  when: ansible_distribution_release in dark_theme_oses
+  when: 
+    - ansible_distribution_release in dark_theme_oses
+    - dark_theme_install | bool
 
 ###################
 # PCI Passthrough #

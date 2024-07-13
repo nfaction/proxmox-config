@@ -14,6 +14,14 @@
     replace: '# {{ pve_ent_source }}'
   when: disable_pve_ent_source | bool
 
+- name: convert ceph to no-subscription
+  lineinfile:
+    path: /etc/apt/sources.list.d/ceph.list
+    state: present
+    regexp: '^deb https?://.*debian/ceph-quincy.*'
+    line: 'deb http://download.proxmox.com/debian/ceph-quincy {{ ansible_distribution_release }} no-subscription'
+  when: ansible_distribution_release in ceph_enterprise_os
+
 #########################
 # Install base packages #
 #########################

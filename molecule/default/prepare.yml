@@ -1,9 +1,17 @@
 ---
 - name: Prepare
   hosts: all
-  vars: []
+  vars:
+    pve_with_ceph_ent:
+      - bookworm
   tasks:
     - name: create dummy file for pci passthrough testing
       copy:
         dest: /etc/kernel/cmdline
         content: 'root=ZFS=rpool/ROOT/pve-1 boot=zfs'
+    
+    - name: create ceph enterprise source list
+      copy:
+        dest: /etc/apt/sources.list.d/ceph.list
+        content: 'deb http://download.proxmox.com/debian/ceph-quincy bookworm subscription'
+      when: ansible_distribution_release in pve_with_ceph_ent

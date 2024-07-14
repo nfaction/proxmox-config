@@ -1,0 +1,40 @@
+---
+- name: Validate system configuration
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+
+    - name: Check if vfio module is loaded
+      shell: lsmod | grep vfio
+      register: vfio_module
+      changed_when: false
+      ignore_errors: true
+
+    - name: display vfio output
+      debug:
+        msg: '{{ vfio_module }}'
+
+    - name: Assert vfio module is loaded
+      assert:
+        that:
+          - "'vfio_pci' in vfio_module.stdout"
+        fail_msg: "vfio modules is not loaded"
+        success_msg: "vfio modules is loaded"
+
+    - name: Check dmesg for DMAR, IOMMU, or AMD-Vi messages
+      shell: dmesg | grep -e DMAR -e IOMMU -e AMD-Vi
+      register: dmesg_output
+      changed_when: false
+      ignore_errors: yes
+
+    - name: display IOMMU output
+      debug:
+        msg: '{{ dmesg_output.stdout_lines }}'
+
+    - name: Assert DMAR, IOMMU, or AMD-Vi messages in dmesg
+      assert:
+        that:
+          - dmesg_output.rc == 0
+        fail_msg: "No DMAR, IOMMU, or AMD-Vi messages found in dmesg"
+        success_msg: "DMAR, IOMMU, or AMD-Vi messages found in dmesg"

@@ -39,6 +39,7 @@ jobs:
         distro:
           - proxmox7
           - proxmox8
+          - proxmox9
 
     steps:
       - name: Check out the codebase.

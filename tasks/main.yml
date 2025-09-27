@@ -45,46 +45,47 @@
     state: absent
   when: ansible_distribution_release == 'trixie'
 
-- name: check if ceph.list exists (PVE 7/8)
-  stat:
-    path: /etc/apt/sources.list.d/ceph.list
-  register: ceph_list_file
+- name: configure ceph repositories
+  block:
+    - name: check if ceph.list exists (PVE 7/8)
+      stat:
+        path: /etc/apt/sources.list.d/ceph.list
+      register: ceph_list_file
 
-- name: check if ceph.sources exists (PVE 9)
-  stat:
-    path: /etc/apt/sources.list.d/ceph.sources
-  register: ceph_sources_file
+    - name: convert ceph to no-subscription (PVE 7/8)
+      lineinfile:
+        path: /etc/apt/sources.list.d/ceph.list
+        state: present
+        regexp: '^deb https?://.*debian/ceph-quincy.*'
+        line: 'deb http://download.proxmox.com/debian/ceph-quincy {{ ansible_distribution_release }} no-subscription'
+      when: 
+        - ansible_distribution_release in ['bullseye', 'bookworm']
+        - ceph_list_file.stat.exists
+  when: ansible_distribution_release in ceph_enterprise_os
 
-- name: convert ceph to no-subscription (PVE 7/8)
-  lineinfile:
-    path: /etc/apt/sources.list.d/ceph.list
-    state: present
-    regexp: '^deb https?://.*debian/ceph-quincy.*'
-    line: 'deb http://download.proxmox.com/debian/ceph-quincy {{ ansible_distribution_release }} no-subscription'
-  when: 
-    - ansible_distribution_release in ceph_enterprise_os
-    - ansible_distribution_release in ['bullseye', 'bookworm']
-    - ceph_list_file.stat.exists
+- name: configure ceph repositories (PVE 9)
+  block:
+    - name: check if ceph.sources exists (PVE 9)
+      stat:
+        path: /etc/apt/sources.list.d/ceph.sources
+      register: ceph_sources_file
 
-- name: convert ceph to no-subscription (PVE 9)
-  replace:
-    path: /etc/apt/sources.list.d/ceph.sources
-    regexp: 'https://enterprise\.proxmox\.com/debian/ceph-squid'
-    replace: 'http://download.proxmox.com/debian/ceph-squid'
+    - name: convert ceph to no-subscription (PVE 9)
+      replace:
+        path: /etc/apt/sources.list.d/ceph.sources
+        regexp: 'https://enterprise\.proxmox\.com/debian/ceph-squid'
+        replace: 'http://download.proxmox.com/debian/ceph-squid'
+      when: ceph_sources_file.stat.exists
+
+    - name: convert ceph components to no-subscription (PVE 9)
+      replace:
+        path: /etc/apt/sources.list.d/ceph.sources
+        regexp: '^Components: enterprise$'
+        replace: 'Components: no-subscription'
+      when: ceph_sources_file.stat.exists
   when: 
     - ansible_distribution_release in ceph_enterprise_os
     - ansible_distribution_release == 'trixie'
-    - ceph_sources_file.stat.exists
-
-- name: convert ceph components to no-subscription (PVE 9)
-  replace:
-    path: /etc/apt/sources.list.d/ceph.sources
-    regexp: '^Components: enterprise$'
-    replace: 'Components: no-subscription'
-  when: 
-    - ansible_distribution_release in ceph_enterprise_os
-    - ansible_distribution_release == 'trixie'
-    - ceph_sources_file.stat.exists
 
 #########################
 # Install base packages #

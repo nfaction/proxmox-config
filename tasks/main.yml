@@ -2,25 +2,90 @@
 ##############################
 # Configure APT repositories #
 ##############################
-- name: configure /etc/apt/sources.list
+# For Proxmox VE 7 and 8 (Debian 11/12) - use old sources.list format
+- name: configure /etc/apt/sources.list (PVE 7/8)
   template:
     src: sources.list.j2
     dest: /etc/apt/sources.list
+  when: ansible_distribution_release in ['bullseye', 'bookworm']
 
-- name: comment out pve-enterprise repositories
+- name: comment out pve-enterprise repositories (PVE 7/8)
   replace:
     path: /etc/apt/sources.list.d/pve-enterprise.list
     regexp: '^{{ pve_ent_source }}'
     replace: '# {{ pve_ent_source }}'
-  when: disable_pve_ent_source | bool
+  when:
+    - disable_pve_ent_source | bool
+    - ansible_distribution_release in ['bullseye', 'bookworm']
 
-- name: convert ceph to no-subscription
-  lineinfile:
-    path: /etc/apt/sources.list.d/ceph.list
-    state: present
-    regexp: '^deb https?://.*debian/ceph-quincy.*'
-    line: 'deb http://download.proxmox.com/debian/ceph-quincy {{ ansible_distribution_release }} no-subscription'
+# For Proxmox VE 9 (Debian 13 trixie) - use new .sources format
+- name: configure debian repositories (PVE 9)
+  template:
+    src: debian.sources.j2
+    dest: /etc/apt/sources.list.d/debian.sources
+  when: ansible_distribution_release == 'trixie'
+
+- name: configure proxmox no-subscription repository (PVE 9)
+  template:
+    src: proxmox.sources.j2
+    dest: /etc/apt/sources.list.d/proxmox.sources
+  when: ansible_distribution_release == 'trixie'
+
+- name: disable pve-enterprise repository (PVE 9)
+  template:
+    src: pve-enterprise.sources.j2
+    dest: /etc/apt/sources.list.d/pve-enterprise.sources
+  when:
+    - disable_pve_ent_source | bool
+    - ansible_distribution_release == 'trixie'
+
+- name: remove old sources.list for PVE 9
+  file:
+    path: /etc/apt/sources.list
+    state: absent
+  when: ansible_distribution_release == 'trixie'
+
+- name: configure ceph repositories
+  block:
+    - name: check if ceph.list exists (PVE 7/8)
+      stat:
+        path: /etc/apt/sources.list.d/ceph.list
+      register: ceph_list_file
+
+    - name: convert ceph to no-subscription (PVE 7/8)
+      lineinfile:
+        path: /etc/apt/sources.list.d/ceph.list
+        state: present
+        regexp: '^deb https?://.*debian/ceph-quincy.*'
+        line: 'deb http://download.proxmox.com/debian/ceph-quincy {{ ansible_distribution_release }} no-subscription'
+      when: 
+        - ansible_distribution_release in ['bullseye', 'bookworm']
+        - ceph_list_file.stat.exists
   when: ansible_distribution_release in ceph_enterprise_os
+
+- name: configure ceph repositories (PVE 9)
+  block:
+    - name: check if ceph.sources exists (PVE 9)
+      stat:
+        path: /etc/apt/sources.list.d/ceph.sources
+      register: ceph_sources_file
+
+    - name: convert ceph to no-subscription (PVE 9)
+      replace:
+        path: /etc/apt/sources.list.d/ceph.sources
+        regexp: 'https://enterprise\.proxmox\.com/debian/ceph-squid'
+        replace: 'http://download.proxmox.com/debian/ceph-squid'
+      when: ceph_sources_file.stat.exists
+
+    - name: convert ceph components to no-subscription (PVE 9)
+      replace:
+        path: /etc/apt/sources.list.d/ceph.sources
+        regexp: '^Components: enterprise$'
+        replace: 'Components: no-subscription'
+      when: ceph_sources_file.stat.exists
+  when: 
+    - ansible_distribution_release in ceph_enterprise_os
+    - ansible_distribution_release == 'trixie'
 
 #########################
 # Install base packages #

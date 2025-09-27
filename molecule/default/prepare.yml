@@ -4,14 +4,30 @@
   vars:
     pve_with_ceph_ent:
       - bookworm
+      - trixie
   tasks:
     - name: create dummy file for pci passthrough testing
       copy:
         dest: /etc/kernel/cmdline
         content: 'root=ZFS=rpool/ROOT/pve-1 boot=zfs'
     
-    - name: create ceph enterprise source list
+    - name: create ceph enterprise source list (PVE 7/8)
       copy:
         dest: /etc/apt/sources.list.d/ceph.list
         content: 'deb http://download.proxmox.com/debian/ceph-quincy bookworm subscription'
-      when: ansible_distribution_release in pve_with_ceph_ent
+      when: 
+        - ansible_distribution_release in pve_with_ceph_ent
+        - ansible_distribution_release in ['bullseye', 'bookworm']
+
+    - name: create ceph enterprise source list (PVE 9)
+      copy:
+        dest: /etc/apt/sources.list.d/ceph.sources
+        content: |
+          Types: deb
+          URIs: https://enterprise.proxmox.com/debian/ceph-squid
+          Suites: trixie
+          Components: enterprise
+          Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+      when: 
+        - ansible_distribution_release in pve_with_ceph_ent
+        - ansible_distribution_release == 'trixie'

@@ -5,6 +5,7 @@ pve_ent_source: 'deb https://enterprise.proxmox.com/debian/pve {{ ansible_distri
 
 ceph_enterprise_os:
   - bookworm
+  - trixie
 
 proxmox_packages:
   - vim

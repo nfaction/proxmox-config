@@ -4,6 +4,10 @@
   hosts: all
   vars:
     roles_dir: roles
+    config_nested_virtualization: true
+    upgrade_proxmox_os_packages: true
+    dark_theme_install: false
+    pci_trigger_update_refresh: true
   pre_tasks:
     # Workaround to run playbook inside this role.
     - name: set playbook dir when running this playbook here

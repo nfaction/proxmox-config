@@ -112,13 +112,13 @@
       copy:
         content: 'options kvm-intel nested=Y'
         dest: /etc/modprobe.d/kvm-intel.conf
-      when: ansible_machine == 'x86_64'
+      when: "'GenuineIntel' in ansible_processor"
     
     - name: enable Intel kernel module
       modprobe:
         name: kvm_intel
         state: present
-      when: ansible_machine == 'x86_64'
+      when: "'GenuineIntel' in ansible_processor"
 
     #  cat /sys/module/kvm_intel/parameters/nested
     
@@ -126,13 +126,13 @@
       copy:
         content: 'options kvm-amd nested=1'
         dest: /etc/modprobe.d/kvm-amd.conf
-      when: ansible_machine != 'x86_64'
+      when: "'AuthenticAMD' in ansible_processor"
     
     - name: enable AMD kernel module
       modprobe:
         name: kvm_amd
         state: present
-      when: ansible_machine != 'x86_64'
+      when: "'AuthenticAMD' in ansible_processor"
   when: config_nested_virtualization | bool
 
 ##############
@@ -202,7 +202,8 @@
         regexp: '^(root=ZFS=rpool/ROOT/pve-1 boot=zfs)(?!.*\b(intel_iommu=on|iommu=pt)\b)(.*)$'
         line: '\1 intel_iommu=on iommu=pt\3'
         backrefs: yes
-      when: ansible_machine == 'x86_64'
+      when: "'GenuineIntel' in ansible_processor"
+
       notify: 'refresh and update EFI and initramfs'
     
     - name: enable IOMMU for AMD in /etc/kernel/cmdline
@@ -211,7 +212,7 @@
         regexp: '^(root=ZFS=rpool/ROOT/pve-1 boot=zfs)(?!.*\biommu=pt\b)(.*)$'
         line: '\1 iommu=pt\2'
         backrefs: yes
-      when: ansible_machine != 'x86_64'
+      when: "'AuthenticAMD' in ansible_processor"
       notify: 'refresh and update EFI and initramfs'
 
     #############################
